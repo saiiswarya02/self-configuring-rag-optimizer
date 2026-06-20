@@ -1,0 +1,12 @@
+streamlit
+langchain
+langchain-community
+langchain-huggingface
+langchain-text-splitters
+faiss-cpu
+sentence-transformers
+pypdf
+optuna
+ollama
+pandas
+numpy
