@@ -3,10 +3,12 @@ langchain
 langchain-community
 langchain-huggingface
 langchain-text-splitters
-faiss-cpu
 sentence-transformers
+faiss-cpu
 pypdf
 optuna
 ollama
-pandas
+torch
+transformers
 numpy
+pandas
