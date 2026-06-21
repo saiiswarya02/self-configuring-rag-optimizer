@@ -1,29 +1,57 @@
 import optuna
+
+from sentence_transformers import SentenceTransformer
+from sentence_transformers.util import cos_sim
+
 from rag_pipeline import RAGPipeline
+from evaluation_data import evaluation_data
+
+model = SentenceTransformer(
+    "sentence-transformers/all-MiniLM-L6-v2"
+)
 
 
-evaluation_questions = [
-    "What is machine learning?",
-    "What is deep learning?",
-    "What is RAG?"
-]
+def semantic_similarity(
+    generated,
+    expected
+):
+
+    emb1 = model.encode(
+        generated,
+        convert_to_tensor=True
+    )
+
+    emb2 = model.encode(
+        expected,
+        convert_to_tensor=True
+    )
+
+    score = cos_sim(
+        emb1,
+        emb2
+    )
+
+    return float(score)
 
 
-def objective(trial, pdf_path):
+def objective(
+    trial,
+    pdf_path
+):
 
     chunk_size = trial.suggest_categorical(
         "chunk_size",
-        [500, 1000, 1500]
+        [500,1000,1500]
     )
 
     chunk_overlap = trial.suggest_categorical(
         "chunk_overlap",
-        [50, 100, 150]
+        [50,100,150]
     )
 
     top_k = trial.suggest_categorical(
         "top_k",
-        [2, 3, 5]
+        [2,3,5]
     )
 
     rag = RAGPipeline(
@@ -35,26 +63,31 @@ def objective(trial, pdf_path):
 
     total_score = 0
 
-    for q in evaluation_questions:
+    for item in evaluation_data:
 
         try:
 
-            answer = rag.answer(q)
-
-            score = min(
-                len(answer) / 100,
-                1.0
+            generated_answer = rag.answer(
+                item["question"]
             )
 
-            total_score += score
+            similarity = semantic_similarity(
+                generated_answer,
+                item["ground_truth"]
+            )
+
+            total_score += similarity
 
         except:
 
             total_score += 0
 
-    return total_score / len(
-        evaluation_questions
+    average_score = (
+        total_score /
+        len(evaluation_data)
     )
+
+    return average_score
 
 
 def optimize(pdf_path):
@@ -64,7 +97,8 @@ def optimize(pdf_path):
     )
 
     study.optimize(
-        lambda trial: objective(
+        lambda trial:
+        objective(
             trial,
             pdf_path
         ),
